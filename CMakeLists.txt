@@ -22,8 +22,8 @@ include(GNUInstallDirs)
 if ( NOT TARGET RouDi )
     FetchContent_Declare(
         ICEORYX
-        GIT_REPOSITORY https://github.com/eclipse/iceoryx.git
-        GIT_TAG master
+        GIT_REPOSITORY https://github.com/ApexAI/iceoryx.git
+        GIT_TAG automotive_soa_unix_domain_socket_comparison
     )
     FetchContent_GetProperties(iceoryx)
     if (NOT iceoryx_POPULATED)
