@@ -15,9 +15,28 @@
 # SPDX-License-Identifier: Apache-2.0
 
 cmake_minimum_required(VERSION 3.16)
-project(example_automotive_soa)
 
+include(FetchContent)
 include(GNUInstallDirs)
+
+if ( NOT TARGET RouDi )
+    FetchContent_Declare(
+        ICEORYX
+        GIT_REPOSITORY https://github.com/eclipse/iceoryx.git
+        GIT_TAG master
+    )
+    FetchContent_GetProperties(iceoryx)
+    if (NOT iceoryx_POPULATED)
+        message(STATUS "updating: iceoryx" )
+        FetchContent_Populate(ICEORYX)
+
+        add_subdirectory(${iceoryx_SOURCE_DIR}/iceoryx_hoofs
+            ${iceoryx_BINARY_DIR}/iceoryx_hoofs)
+        add_subdirectory(${iceoryx_SOURCE_DIR}/iceoryx_posh  ${iceoryx_BINARY_DIR}/iceoryx_posh)
+    endif()
+endif()
+
+project(example_automotive_soa)
 
 find_package(iceoryx_posh CONFIG REQUIRED)
 find_package(iceoryx_hoofs CONFIG REQUIRED)
