@@ -41,22 +41,24 @@ inline FieldSubscriber<T>::~FieldSubscriber() noexcept
     // Wait here if a thread or callback is still running
     while (m_threadsRunning > 0)
     {
+        std::this_thread::yield();
     }
-    std::lock_guard<iox::posix::mutex> guard(m_mutex);
+    std::lock_guard<iox::posix::mutex> guard(m_onlyOneThreadRunningMutex);
 }
 
 template <typename T>
 template <typename Callable>
-inline core::Result<size_t> FieldSubscriber<T>::GetNewSamples(Callable&& callable, size_t maxNumberOfSamples) noexcept
+inline core::Result<uint32_t> FieldSubscriber<T>::TakeNewSamples(Callable&& callable,
+                                                                 uint32_t maxNumberOfSamples) noexcept
 {
-    core::Result<size_t> numberOfSamples{0};
+    core::Result<uint32_t> numberOfSamples{0};
 
     // Hint: Depending on the type of callable, it needs to be checked for null or restricting to lambdas
 
     while (m_subscriber.take()
                .and_then([&](const auto& sample) {
                    callable(sample.get());
-                   numberOfSamples++;
+                   ++numberOfSamples;
                })
                .or_else([](auto& result) {
                    if (result != iox::popo::ChunkReceiveResult::NO_CHUNK_AVAILABLE)
@@ -84,10 +86,7 @@ inline Future<T> FieldSubscriber<T>::Get()
                 std::cerr << "Could not send Request! Error: " << error << std::endl;
             });
         })
-        .or_else([&](auto& error) {
-            std::cerr << "Could not allocate Request! Error: " << error << std::endl;
-            requestSuccessfullySent = false;
-        });
+        .or_else([&](auto& error) { std::cerr << "Could not allocate Request! Error: " << error << std::endl; });
 
     if (!requestSuccessfullySent)
     {
@@ -114,10 +113,7 @@ inline Future<T> FieldSubscriber<T>::Set(const FieldType& value)
                 std::cerr << "Could not send Request! Error: " << error << std::endl;
             });
         })
-        .or_else([&](auto& error) {
-            std::cerr << "Could not allocate Request! Error: " << error << std::endl;
-            requestSuccessfullySent = false;
-        });
+        .or_else([&](auto& error) { std::cerr << "Could not allocate Request! Error: " << error << std::endl; });
 
     if (!requestSuccessfullySent)
     {
@@ -131,13 +127,12 @@ inline Future<T> FieldSubscriber<T>::receiveResponse()
 {
     Promise<FieldType> promise;
     auto future = promise.get_future();
-    m_threadsRunning++;
+    ++m_threadsRunning;
     // Typically you would e.g. use a worker pool here, for simplicity we use a plain thread
     std::thread(
         [&](Promise<FieldType>&& promise) {
-            // Avoid race if FieldSubscriber d'tor is called while this thread is still running
             //! [FieldSubscriber receive response]
-            std::lock_guard<iox::posix::mutex> guard(m_mutex);
+            std::lock_guard<iox::posix::mutex> guard(m_onlyOneThreadRunningMutex);
 
             auto notificationVector = m_waitset.timedWait(iox::units::Duration::fromSeconds(5));
 
@@ -155,21 +150,21 @@ inline Future<T> FieldSubscriber<T>::receiveResponse()
                         if (receivedSequenceId == m_sequenceId)
                         {
                             FieldType result = *response;
-                            m_sequenceId++;
+                            ++m_sequenceId;
                             promise.set_value_at_thread_exit(result);
                         }
                         else
                         {
                             std::cerr << "Got Response with outdated sequence ID! Expected = " << m_sequenceId
                                       << "; Actual = " << receivedSequenceId << "!" << std::endl;
-                            std::terminate();
+                            std::exit(EXIT_FAILURE);
                         }
                     }))
                     {
                     }
                 }
             }
-            m_threadsRunning--;
+            --m_threadsRunning;
             //! [FieldSubscriber receive response]
         },
         std::move(promise))

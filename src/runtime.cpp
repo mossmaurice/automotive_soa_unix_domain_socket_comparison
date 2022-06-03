@@ -31,7 +31,8 @@ Runtime& Runtime::GetInstance() noexcept
 }
 
 kom::ServiceHandleContainer<kom::ProxyHandleType>
-Runtime::FindService(kom::ServiceIdentifier& serviceIdentifier, kom::InstanceIdentifier& instanceIdentifier) noexcept
+Runtime::FindService(const kom::ServiceIdentifier& serviceIdentifier,
+                     const kom::InstanceIdentifier& instanceIdentifier) noexcept
 {
     //! [searching for iceoryx services]
     kom::ServiceHandleContainer<kom::ProxyHandleType> iceoryxServiceContainer;
@@ -67,15 +68,16 @@ Runtime::FindService(kom::ServiceIdentifier& serviceIdentifier, kom::InstanceIde
     //! [verify iceoryx mapping]
 }
 
-kom::FindServiceHandle Runtime::StartFindService(kom::FindServiceHandler<kom::ProxyHandleType> handler,
-                                                 kom::ServiceIdentifier& serviceIdentifier,
-                                                 kom::InstanceIdentifier& instanceIdentifier) noexcept
+kom::FindServiceCallbackHandle
+Runtime::EnableFindServiceCallback(const kom::FindServiceCallback<kom::ProxyHandleType> handler,
+                                   const kom::ServiceIdentifier& serviceIdentifier,
+                                   const kom::InstanceIdentifier& instanceIdentifier) noexcept
 {
     // Duplicate entries for the same service are allowed
     if (!m_callbacks.push_back(CallbackEntryType(
             handler, {serviceIdentifier, instanceIdentifier}, NumberOfAvailableServicesOnLastSearch())))
     {
-        std::cerr << "Callback vector capacity exceeded, did not StartFindService!" << std::endl;
+        std::cerr << "Callback vector capacity exceeded, did not EnableFindServiceCallback!" << std::endl;
         std::exit(EXIT_FAILURE);
     }
 
@@ -88,20 +90,18 @@ kom::FindServiceHandle Runtime::StartFindService(kom::FindServiceHandler<kom::Pr
     }
     //! [attach discovery to listener]
 
-    return kom::FindServiceHandle({serviceIdentifier, instanceIdentifier});
+    return kom::FindServiceCallbackHandle({serviceIdentifier, instanceIdentifier});
 }
 
-void Runtime::StopFindService(kom::FindServiceHandle handle) noexcept
+void Runtime::DisableFindServiceCallback(const kom::FindServiceCallbackHandle handle) noexcept
 {
-    auto iter = m_callbacks.begin();
-    for (; iter != m_callbacks.end(); iter++)
+    auto iter = std::find_if(m_callbacks.begin(), m_callbacks.end(), [&](auto& element) {
+        return std::get<1>(element).GetServiceId() == handle.GetServiceId()
+               && std::get<1>(element).GetInstanceId() == handle.GetInstanceId();
+    });
+    if (iter != m_callbacks.end())
     {
-        if (std::get<1>(*iter).GetServiceId() == handle.GetServiceId()
-            && std::get<1>(*iter).GetInstanceId() == handle.GetInstanceId())
-        {
-            m_callbacks.erase(iter);
-            break;
-        }
+        m_callbacks.erase(iter);
     }
 
     if (m_callbacks.empty())
@@ -110,7 +110,7 @@ void Runtime::StopFindService(kom::FindServiceHandle handle) noexcept
     }
 }
 
-bool Runtime::verifyThatServiceIsComplete(kom::ServiceHandleContainer<kom::ProxyHandleType>& container) noexcept
+bool Runtime::verifyThatServiceIsComplete(const kom::ServiceHandleContainer<kom::ProxyHandleType>& container) noexcept
 {
     // The service level of AUTOSAR Adaptive is not available in iceoryx, instead every publisher and server is
     // considered as a service. A ara::com binding implementer would typically query the AUTOSAR meta model here, to
@@ -122,11 +122,7 @@ bool Runtime::verifyThatServiceIsComplete(kom::ServiceHandleContainer<kom::Proxy
     // 2. b) FieldPublisher: MinimalSkeleton, Instance, Field  (iox::popo::Server)
     // 3.    MethodServer:   MinimalSkeleton, Instance, Method (iox::popo::Server)
 
-    if (container.size() == 4U)
-    {
-        return true;
-    }
-    return false;
+    return (container.size() == NUMBER_OF_ALL_SERVICES);
 }
 
 void Runtime::invokeCallback(iox::runtime::ServiceDiscovery*, Runtime* self) noexcept
@@ -149,8 +145,8 @@ void Runtime::invokeCallback(iox::runtime::ServiceDiscovery*, Runtime* self) noe
 
         auto executeCallback = [&]() {
             (std::get<0>(callback))(container,
-                                    kom::FindServiceHandle({std::get<1>(callback).m_serviceIdentifier,
-                                                            std::get<1>(callback).m_instanceIdentifier}));
+                                    kom::FindServiceCallbackHandle({std::get<1>(callback).m_serviceIdentifier,
+                                                                    std::get<1>(callback).m_instanceIdentifier}));
             numberOfAvailableServicesOnLastSearch.emplace(numberOfAvailableServicesOnCurrentSearch);
         };
 

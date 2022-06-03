@@ -37,7 +37,7 @@ MethodServer::~MethodServer() noexcept
     m_listener.detachEvent(m_server, iox::popo::ServerEvent::REQUEST_RECEIVED);
 }
 
-Future<AddResponse> MethodServer::computeSum(uint64_t addend1, uint64_t addend2)
+Future<AddResponse> MethodServer::computeSum(const uint64_t addend1, const uint64_t addend2)
 {
     // for simplicity we don't create thread here and make the call synchronous
     Promise<AddResponse> promise;
@@ -47,9 +47,9 @@ Future<AddResponse> MethodServer::computeSum(uint64_t addend1, uint64_t addend2)
 
 void MethodServer::onRequestReceived(iox::popo::Server<AddRequest, AddResponse>* server, MethodServer* self) noexcept
 {
-    if (self == nullptr)
+    if (server == nullptr || self == nullptr)
     {
-        std::cerr << "Callback was invoked with MethodServer* being a nullptr!" << std::endl;
+        std::cerr << "Callback was invoked with server or self being a nullptr!" << std::endl;
         return;
     }
 
@@ -69,7 +69,7 @@ void MethodServer::onRequestReceived(iox::popo::Server<AddRequest, AddResponse>*
     }
 }
 
-uint64_t MethodServer::computeSumInternal(uint64_t addend1, uint64_t addend2) noexcept
+uint64_t MethodServer::computeSumInternal(const uint64_t addend1, const uint64_t addend2) noexcept
 {
     return addend1 + addend2;
 }

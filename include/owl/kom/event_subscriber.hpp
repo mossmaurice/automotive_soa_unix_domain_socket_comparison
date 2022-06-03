@@ -30,10 +30,10 @@ namespace kom
 template <typename T, EventTransmission>
 class EventSubscriber;
 
-/// @note Once a receive handler has been set, calling the following methods is not thread-safe:
+/// @note Once a receive callback has been set, calling the following methods is not thread-safe:
 ///           - Subscribe()
 ///           - Unsubscribe()
-///           - GetNewSamples()
+///           - TakeNewSamples()
 template <typename T>
 class EventSubscriber<T, EventTransmission::IOX>
 {
@@ -42,23 +42,23 @@ class EventSubscriber<T, EventTransmission::IOX>
 
     static constexpr uint64_t HISTORY_REQUEST{1U};
     static constexpr bool NOT_OFFERED_ON_CREATE{false};
+    static constexpr uint32_t TAKE_ALL_SAMPLES{std::numeric_limits<uint32_t>::max()};
 
     EventSubscriber(const ServiceIdentifier& service,
                     const InstanceIdentifier& instance,
                     const EventIdentifier& event) noexcept;
 
-    /// @note Will disable the receive handler if active
-    void Subscribe(std::size_t queueCapacity) noexcept;
-    /// @note Will disable the receive handler if active
+    /// @note Will disable the receive callback if active
+    void Subscribe(const uint32_t queueCapacity) noexcept;
+    /// @note Will disable the receive callback if active
     void Unsubscribe() noexcept;
 
     template <typename Callable>
-    core::Result<size_t> GetNewSamples(Callable&& callable,
-                                       size_t maxNumberOfSamples = std::numeric_limits<size_t>::max()) noexcept;
+    core::Result<uint32_t> TakeNewSamples(Callable&& callable, uint32_t maxNumberOfSamples = TAKE_ALL_SAMPLES) noexcept;
 
-    void SetReceiveHandler(EventReceiveHandler handler) noexcept;
-    void UnsetReceiveHandler() noexcept;
-    bool HasReceiveHandler() const noexcept;
+    void SetReceiveCallback(EventReceiveCallback handler) noexcept;
+    void UnsetReceiveCallback() noexcept;
+    bool HasReceiveCallback() const noexcept;
 
 
   private:
@@ -67,7 +67,9 @@ class EventSubscriber<T, EventTransmission::IOX>
     //! [EventSubscriber members]
     iox::capro::ServiceDescription m_serviceDescription;
     iox::cxx::optional<iox::popo::Subscriber<T>> m_subscriber;
-    iox::concurrent::smart_lock<iox::cxx::optional<iox::cxx::function<void()>>> m_receiveHandler;
+    iox::concurrent::smart_lock<iox::cxx::optional<iox::cxx::function<void()>>> m_receiveCallback;
+    /// @note For simplicity a Listener is added to each subscriber, a performance version would re-use the Listener in
+    /// the Runtime
     iox::popo::Listener m_listener;
     //! [EventSubscriber members]
 };

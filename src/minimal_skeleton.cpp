@@ -16,7 +16,8 @@
 
 #include "minimal_skeleton.hpp"
 
-constexpr char MinimalSkeleton::m_serviceIdentifier[];
+constexpr char MinimalSkeleton::SERVICE_IDENTIFIER[];
+constexpr Topic MinimalSkeleton::initalFieldValue;
 
 MinimalSkeleton::MinimalSkeleton(const owl::kom::InstanceIdentifier& instanceIdentifier) noexcept
     : m_instanceIdentifier(instanceIdentifier)
@@ -25,15 +26,15 @@ MinimalSkeleton::MinimalSkeleton(const owl::kom::InstanceIdentifier& instanceIde
 
 MinimalSkeleton::~MinimalSkeleton() noexcept
 {
-    StopOfferService();
+    StopOffer();
 }
 
-void MinimalSkeleton::OfferService() noexcept
+void MinimalSkeleton::Offer() noexcept
 {
     m_event.Offer();
 }
 
-void MinimalSkeleton::StopOfferService() noexcept
+void MinimalSkeleton::StopOffer() noexcept
 {
     m_event.StopOffer();
 }

@@ -41,7 +41,7 @@ class MethodClient
     MethodClient& operator=(const MethodClient&) = delete;
     MethodClient& operator=(MethodClient&&) = delete;
 
-    Future<AddResponse> operator()(uint64_t addend1, uint64_t addend2);
+    Future<AddResponse> operator()(const uint64_t addend1, const uint64_t addend2);
 
   private:
     //! [MethodClient members]
@@ -49,7 +49,7 @@ class MethodClient
     std::atomic<int64_t> m_sequenceId{0};
     iox::popo::WaitSet<> m_waitset;
     static constexpr bool IS_RECURSIVE{true};
-    iox::posix::mutex m_mutex{IS_RECURSIVE};
+    iox::posix::mutex m_onlyOneThreadRunningMutex{IS_RECURSIVE};
     std::atomic<uint32_t> m_threadsRunning{0};
     //! [MethodClient members]
 };

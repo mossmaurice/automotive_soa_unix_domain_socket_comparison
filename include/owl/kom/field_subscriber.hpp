@@ -47,8 +47,8 @@ class FieldSubscriber
     FieldSubscriber& operator=(FieldSubscriber&&) = delete;
 
     template <typename Callable>
-    core::Result<size_t> GetNewSamples(Callable&& callable,
-                                       size_t maxNumberOfSamples = std::numeric_limits<size_t>::max()) noexcept;
+    core::Result<uint32_t> TakeNewSamples(Callable&& callable,
+                                          uint32_t maxNumberOfSamples = std::numeric_limits<uint32_t>::max()) noexcept;
 
     Future<FieldType> Get();
     Future<FieldType> Set(const FieldType& value);
@@ -62,7 +62,7 @@ class FieldSubscriber
     std::atomic<int64_t> m_sequenceId{0};
     iox::popo::WaitSet<> m_waitset;
     static constexpr bool IS_RECURSIVE{true};
-    iox::posix::mutex m_mutex{IS_RECURSIVE};
+    iox::posix::mutex m_onlyOneThreadRunningMutex{IS_RECURSIVE};
     std::atomic<uint32_t> m_threadsRunning{0};
     //! [FieldSubscriber members]
 };

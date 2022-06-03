@@ -33,7 +33,7 @@ inline EventPublisher<T, EventTransmission::UDS>::EventPublisher(const ServiceId
 }
 
 template <typename T>
-inline std::unique_ptr<T> EventPublisher<T, EventTransmission::UDS>::Allocate()
+inline std::unique_ptr<T> EventPublisher<T, EventTransmission::UDS>::Loan()
 {
     // The proxy needs some time to discover the service and create the EventSubscriber with the UDS server,
     // hence the creation of the UDS client is done here

@@ -45,19 +45,19 @@ class EventSubscriber<T, EventTransmission::UDS>
 
     ~EventSubscriber() noexcept;
 
-    void Subscribe(std::size_t) noexcept;
+    void Subscribe(uint32_t) noexcept;
     void Unsubscribe() noexcept;
 
     template <typename Callable>
-    core::Result<size_t> GetNewSamples(Callable&& callable,
-                                       size_t maxNumberOfSamples = std::numeric_limits<size_t>::max());
+    core::Result<uint32_t> TakeNewSamples(Callable&& callable,
+                                          uint32_t maxNumberOfSamples = std::numeric_limits<uint32_t>::max());
 
-    void SetReceiveHandler(EventReceiveHandler handler);
-    void UnsetReceiveHandler() noexcept;
-    bool HasReceiveHandler() noexcept;
+    void SetReceiveCallback(EventReceiveCallback handler);
+    void UnsetReceiveCallback() noexcept;
+    bool HasReceiveCallback() noexcept;
 
   private:
-    iox::cxx::optional<iox::cxx::function<void()>> m_receiveHandler;
+    iox::cxx::optional<iox::cxx::function<void()>> m_receiveCallback;
     static constexpr bool IS_RECURSIVE{true};
     iox::posix::mutex m_mutex{IS_RECURSIVE};
     iox::posix::UnixDomainSocket m_uds;
@@ -66,7 +66,7 @@ class EventSubscriber<T, EventTransmission::UDS>
         while (m_run)
         {
             // We call the user callback in an endless loop and wait till having received a complete message
-            m_receiveHandler.and_then([](iox::cxx::function<void()>& userCallable) {
+            m_receiveCallback.and_then([](iox::cxx::function<void()>& userCallable) {
                 if (!userCallable)
                 {
                     std::cerr << "Tried to call an empty receive handler!" << std::endl;

@@ -49,7 +49,7 @@ class EventPublisher<T, EventTransmission::UDS>
     static constexpr uint64_t HISTORY_CAPACITY{1U};
     static constexpr bool OFFERED_ON_CREATE{true};
 
-    std::unique_ptr<SampleType> Allocate();
+    std::unique_ptr<SampleType> Loan();
 
     bool Send(std::unique_ptr<SampleType> userSamplePtr);
 

@@ -27,13 +27,14 @@
 #include "owl/runtime.hpp"
 #include "owl/types.hpp"
 
-/// @note Once a handler has been set with 'StartFindService', calling 'FindService' is not thread-safe!
+/// @note Proxy classes are typically generated
+/// @note Once a handler has been set with 'EnableFindServiceCallback', calling 'FindService' is not thread-safe!
 class MinimalProxy
 {
   public:
-    static constexpr char m_serviceIdentifier[] = "MinimalSkeleton";
+    static constexpr char SERVICE_IDENTIFIER[] = "ExampleSkeleton";
 
-    MinimalProxy(owl::kom::ProxyHandleType& handle) noexcept;
+    MinimalProxy(const owl::kom::ProxyHandleType& handle) noexcept;
     ~MinimalProxy() noexcept = default;
 
     MinimalProxy(const MinimalProxy&) = delete;
@@ -41,19 +42,20 @@ class MinimalProxy
     MinimalProxy& operator=(const MinimalProxy&) = delete;
     MinimalProxy& operator=(MinimalProxy&&) = delete;
 
-    static owl::kom::FindServiceHandle StartFindService(owl::kom::FindServiceHandler<owl::kom::ProxyHandleType> handler,
-                                                        owl::kom::InstanceIdentifier& instanceIdentifier) noexcept;
+    static owl::kom::FindServiceCallbackHandle
+    EnableFindServiceCallback(const owl::kom::FindServiceCallback<owl::kom::ProxyHandleType> handler,
+                              const owl::kom::InstanceIdentifier& instanceIdentifier) noexcept;
 
-    static void StopFindService(owl::kom::FindServiceHandle handle) noexcept;
+    static void DisableFindServiceCallback(const owl::kom::FindServiceCallbackHandle handle) noexcept;
 
     static owl::kom::ServiceHandleContainer<owl::kom::ProxyHandleType>
-    FindService(owl::kom::InstanceIdentifier& instanceIdentifier) noexcept;
+    FindService(const owl::kom::InstanceIdentifier& instanceIdentifier) noexcept;
 
     const owl::kom::InstanceIdentifier m_instanceIdentifier;
     owl::kom::EventSubscriber<TimestampTopic1Byte, EVENT_IPC_MECHANISM> m_event{
-        m_serviceIdentifier, m_instanceIdentifier, "Event"};
-    owl::kom::FieldSubscriber<Topic> m_field{m_serviceIdentifier, m_instanceIdentifier, "Field"};
-    owl::kom::MethodClient computeSum{m_serviceIdentifier, m_instanceIdentifier, "Method"};
+        SERVICE_IDENTIFIER, m_instanceIdentifier, "Event"};
+    owl::kom::FieldSubscriber<Topic> m_field{SERVICE_IDENTIFIER, m_instanceIdentifier, "Field"};
+    owl::kom::MethodClient computeSum{SERVICE_IDENTIFIER, m_instanceIdentifier, "Method"};
 };
 
 #endif // IOX_EXAMPLES_AUTOMOTIVE_SOA_MINIMAL_PROXY_HPP

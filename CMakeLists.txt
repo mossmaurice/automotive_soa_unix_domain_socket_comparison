@@ -16,10 +16,8 @@
 
 cmake_minimum_required(VERSION 3.16)
 
-include(FetchContent)
-include(GNUInstallDirs)
-
 if ( NOT TARGET RouDi )
+    include(FetchContent)
     FetchContent_Declare(
         ICEORYX
         GIT_REPOSITORY https://github.com/ApexAI/iceoryx.git
@@ -42,7 +40,10 @@ find_package(iceoryx_posh CONFIG REQUIRED)
 find_package(iceoryx_hoofs CONFIG REQUIRED)
 
 get_target_property(ICEORYX_CXX_STANDARD iceoryx_posh::iceoryx_posh CXX_STANDARD)
+
+include(GNUInstallDirs)
 include(IceoryxPlatform)
+
 
 option(USE_UDS "Send Events via UNIX domain sockets" OFF)
 
@@ -60,7 +61,7 @@ if(NOT USE_UDS)
   target_compile_definitions(iox-cpp-automotive-skeleton PUBLIC USED_IPC_MECHANISM_FOR_EVENTS=EventTransmission::IOX)
 else()
   target_compile_definitions(iox-cpp-automotive-skeleton PUBLIC USED_IPC_MECHANISM_FOR_EVENTS=EventTransmission::UDS)
-endif(USE_UDS)
+endif()
 
 target_include_directories(iox-cpp-automotive-skeleton PRIVATE include)
 
@@ -78,7 +79,7 @@ if(NOT USE_UDS)
   target_compile_definitions(iox-cpp-automotive-proxy PUBLIC USED_IPC_MECHANISM_FOR_EVENTS=EventTransmission::IOX)
 else()
   target_compile_definitions(iox-cpp-automotive-proxy PUBLIC USED_IPC_MECHANISM_FOR_EVENTS=EventTransmission::UDS)
-endif(USE_UDS)
+endif()
 
 target_include_directories(iox-cpp-automotive-proxy PRIVATE include)
 

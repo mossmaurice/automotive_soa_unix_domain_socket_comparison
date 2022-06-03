@@ -33,7 +33,7 @@ constexpr EventTransmission EVENT_IPC_MECHANISM = USED_IPC_MECHANISM_FOR_EVENTS;
 #include "iceoryx_posh/capro/service_description.hpp"
 #include "iceoryx_posh/popo/sample.hpp"
 
-#include "kom/sample_allocatee_ptr.hpp"
+#include "kom/sample_pointer.hpp"
 
 #include <future>
 #include <memory>
@@ -61,7 +61,7 @@ using EventIdentifier = core::String;
 using FieldIdentifier = core::String;
 using MethodIdentifier = core::String;
 
-struct FindServiceHandle
+struct FindServiceCallbackHandle
 {
     // Only the Runtime shall be able to create handles, not the user
     friend class owl::Runtime;
@@ -77,7 +77,7 @@ struct FindServiceHandle
     }
 
   private:
-    FindServiceHandle(ServiceIdentifier serviceIdentifier, InstanceIdentifier instanceIdentifier) noexcept
+    FindServiceCallbackHandle(ServiceIdentifier serviceIdentifier, InstanceIdentifier instanceIdentifier) noexcept
         : m_serviceIdentifier(serviceIdentifier)
         , m_instanceIdentifier(instanceIdentifier)
     {
@@ -115,13 +115,15 @@ struct ProxyHandleType
     InstanceIdentifier m_instanceIdentifier;
 };
 
-template <typename T>
-using ServiceHandleContainer = iox::cxx::vector<T, 50U>;
+constexpr uint64_t MAXIMUM_SEARCH_RESULTS{50};
 
 template <typename T>
-using FindServiceHandler = iox::cxx::function<void(ServiceHandleContainer<T>, FindServiceHandle)>;
+using ServiceHandleContainer = iox::cxx::vector<T, MAXIMUM_SEARCH_RESULTS>;
 
-using EventReceiveHandler = iox::cxx::function<void()>;
+template <typename T>
+using FindServiceCallback = iox::cxx::function<void(ServiceHandleContainer<T>, FindServiceCallbackHandle)>;
+
+using EventReceiveCallback = iox::cxx::function<void()>;
 
 // We use the STL version as future is not available in hoofs
 template <typename T>

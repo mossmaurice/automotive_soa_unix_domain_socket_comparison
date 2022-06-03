@@ -40,7 +40,7 @@ inline EventSubscriber<T, EventTransmission::UDS>::~EventSubscriber() noexcept
 }
 
 template <typename T>
-inline void EventSubscriber<T, EventTransmission::UDS>::Subscribe(std::size_t) noexcept
+inline void EventSubscriber<T, EventTransmission::UDS>::Subscribe(uint32_t) noexcept
 {
     // Subscribe not supported with UDS
 }
@@ -53,12 +53,12 @@ void EventSubscriber<T, EventTransmission::UDS>::Unsubscribe() noexcept
 
 template <typename T>
 template <typename Callable>
-core::Result<size_t> inline EventSubscriber<T, EventTransmission::UDS>::GetNewSamples(Callable&& callable,
-                                                                                      size_t maxNumberOfSamples)
+core::Result<uint32_t> inline EventSubscriber<T, EventTransmission::UDS>::TakeNewSamples(Callable&& callable,
+                                                                                         uint32_t maxNumberOfSamples)
 {
     IOX_DISCARD_RESULT(maxNumberOfSamples);
 
-    core::Result<size_t> numberOfSamples{1};
+    core::Result<uint32_t> numberOfSamples{1};
 
     auto samplePtr = std::make_unique<SampleType>();
     SampleType& sample = *samplePtr;
@@ -110,34 +110,34 @@ core::Result<size_t> inline EventSubscriber<T, EventTransmission::UDS>::GetNewSa
 }
 
 template <typename T>
-inline void EventSubscriber<T, EventTransmission::UDS>::SetReceiveHandler(EventReceiveHandler handler)
+inline void EventSubscriber<T, EventTransmission::UDS>::SetReceiveCallback(EventReceiveCallback callback)
 {
     std::lock_guard<iox::posix::mutex> guard(m_mutex);
-    if (HasReceiveHandler())
+    if (HasReceiveCallback())
     {
-        std::cout << "Re-attaching a receiver handler is not supported with UNIX domain sockets!" << std::endl;
+        std::cout << "Re-attaching a receiver callback is not supported with UNIX domain sockets!" << std::endl;
         return;
     }
-    if (!handler)
+    if (!callback)
     {
-        std::cerr << "Can't attach empty receive handler!" << std::endl;
+        std::cerr << "Can't attach empty callback callback!" << std::endl;
         return;
     }
-    m_receiveHandler.emplace(handler);
+    m_receiveCallback.emplace(callback);
 }
 
 
 template <typename T>
-inline void EventSubscriber<T, EventTransmission::UDS>::UnsetReceiveHandler() noexcept
+inline void EventSubscriber<T, EventTransmission::UDS>::UnsetReceiveCallback() noexcept
 {
-    std::cout << "Unsetting the receive handler is not supported with UNIX domain sockets!" << std::endl;
+    std::cout << "Unsetting the receive callback is not supported with UNIX domain sockets!" << std::endl;
 }
 
 template <typename T>
-inline bool EventSubscriber<T, EventTransmission::UDS>::HasReceiveHandler() noexcept
+inline bool EventSubscriber<T, EventTransmission::UDS>::HasReceiveCallback() noexcept
 {
     std::lock_guard<iox::posix::mutex> guard(m_mutex);
-    return m_receiveHandler.has_value();
+    return m_receiveCallback.has_value();
 }
 } // namespace kom
 } // namespace owl

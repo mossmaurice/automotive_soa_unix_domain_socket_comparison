@@ -29,14 +29,16 @@
 
 namespace owl
 {
-/// @note Once a handler has been set with 'StartFindService', calling 'FindService' is not thread-safe!
+/// @note Once a handler has been set with 'EnableFindServiceCallback', calling 'FindService' is not thread-safe!
 class Runtime
 {
   private:
     using NumberOfAvailableServicesOnLastSearch = iox::cxx::optional<uint64_t>;
-    using CallbackEntryType = std::tuple<kom::FindServiceHandler<kom::ProxyHandleType>,
-                                         kom::FindServiceHandle,
+    using CallbackEntryType = std::tuple<kom::FindServiceCallback<kom::ProxyHandleType>,
+                                         kom::FindServiceCallbackHandle,
                                          NumberOfAvailableServicesOnLastSearch>;
+
+    static constexpr uint64_t NUMBER_OF_ALL_SERVICES{4U};
 
   public:
     static Runtime& GetInstance(const core::String& name) noexcept;
@@ -51,8 +53,9 @@ class Runtime
     /// @param[in] serviceIdentifier string of service to search for
     /// @param[in] instanceIdentifier string of instance to search for
     /// @return Container with an entry for each found instance
-    kom::ServiceHandleContainer<kom::ProxyHandleType> FindService(kom::ServiceIdentifier& serviceIdentifier,
-                                                                  kom::InstanceIdentifier& instanceIdentifier) noexcept;
+    kom::ServiceHandleContainer<kom::ProxyHandleType>
+    FindService(const kom::ServiceIdentifier& serviceIdentifier,
+                const kom::InstanceIdentifier& instanceIdentifier) noexcept;
 
     /// @brief Sets up an asychronous search for specific instance of a service
     /// @param[in] handler callback which shall be executed when the availabilty of the specific instance of a service
@@ -61,18 +64,19 @@ class Runtime
     /// @param[in] instanceIdentifier string of instance to search for
     /// @return Handle which can be used to stop an ongoing search
     /// @note ABA problem might occur: Available service which becomes unavailable during search and hence is not found
-    kom::FindServiceHandle StartFindService(kom::FindServiceHandler<kom::ProxyHandleType> handler,
-                                            kom::ServiceIdentifier& serviceIdentifier,
-                                            kom::InstanceIdentifier& instanceIdentifier) noexcept;
+    kom::FindServiceCallbackHandle
+    EnableFindServiceCallback(const kom::FindServiceCallback<kom::ProxyHandleType> handler,
+                              const kom::ServiceIdentifier& serviceIdentifier,
+                              const kom::InstanceIdentifier& instanceIdentifier) noexcept;
 
     /// @brief Stops an asychronous search for specific instance of a service
     /// @param[in] handle instance of service which shall be stopped
-    void StopFindService(kom::FindServiceHandle handle) noexcept;
+    void DisableFindServiceCallback(const kom::FindServiceCallbackHandle handle) noexcept;
 
   private:
     explicit Runtime() noexcept = default;
 
-    bool verifyThatServiceIsComplete(kom::ServiceHandleContainer<kom::ProxyHandleType>& container) noexcept;
+    bool verifyThatServiceIsComplete(const kom::ServiceHandleContainer<kom::ProxyHandleType>& container) noexcept;
 
     static void invokeCallback(iox::runtime::ServiceDiscovery*, Runtime* self) noexcept;
 

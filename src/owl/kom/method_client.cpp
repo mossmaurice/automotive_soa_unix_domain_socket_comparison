@@ -35,14 +35,15 @@ MethodClient::~MethodClient() noexcept
     // Wait here if a thread or callback is still running
     while (m_threadsRunning > 0)
     {
+        std::this_thread::yield();
     }
-    std::lock_guard<iox::posix::mutex> guard(m_mutex);
+    std::lock_guard<iox::posix::mutex> guard(m_onlyOneThreadRunningMutex);
 }
 
 // If we call the operator() twice shortly after each other, once the response of the first request has not yet
 // arrived, we have a problem
 //! [MethodClient send request]
-Future<AddResponse> MethodClient::operator()(uint64_t addend1, uint64_t addend2)
+Future<AddResponse> MethodClient::operator()(const uint64_t addend1, const uint64_t addend2)
 {
     bool requestSuccessfullySent{false};
     m_client.loan()
@@ -68,12 +69,11 @@ Future<AddResponse> MethodClient::operator()(uint64_t addend1, uint64_t addend2)
     Promise<AddResponse> promise;
     auto future = promise.get_future();
 
-    m_threadsRunning++;
+    ++m_threadsRunning;
     // Typically you would e.g. use a worker pool here, for simplicity we use a plain thread
     std::thread(
         [&](Promise<AddResponse>&& promise) {
-            // Avoid race if MethodClient d'tor is called while this thread is still running
-            std::lock_guard<iox::posix::mutex> guard(m_mutex);
+            std::lock_guard<iox::posix::mutex> guard(m_onlyOneThreadRunningMutex);
 
             auto notificationVector = m_waitset.timedWait(iox::units::Duration::fromSeconds(5));
 
@@ -98,14 +98,14 @@ Future<AddResponse> MethodClient::operator()(uint64_t addend1, uint64_t addend2)
                         {
                             std::cerr << "Got Response with outdated sequence ID! Expected = " << m_sequenceId
                                       << "; Actual = " << receivedSequenceId << "!" << std::endl;
-                            std::terminate();
+                            std::exit(EXIT_FAILURE);
                         }
                     }))
                     {
                     }
                 }
             }
-            m_threadsRunning--;
+            --m_threadsRunning;
         },
         std::move(promise))
         .detach();
