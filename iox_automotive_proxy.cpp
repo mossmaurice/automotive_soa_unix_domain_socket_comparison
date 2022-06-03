@@ -62,8 +62,8 @@ int main()
     }
     else
     {
-        std::cout << "  Found no service(s), setting up asynchronous search with 'EnableFindServiceCallback'!"
-                  << std::endl;
+        // std::cout << "  Found no service(s), setting up asynchronous search with 'EnableFindServiceCallback'!"
+        //           << std::endl;
         auto callback = [&](kom::ServiceHandleContainer<owl::kom::ProxyHandleType> container,
                             kom::FindServiceCallbackHandle) -> void {
             //! [destroy proxy asynchronously]
@@ -117,10 +117,10 @@ int main()
                 auto onReceive = [&]() -> void {
                     proxy.m_event.TakeNewSamples([](const auto& topic) {
                         auto finish = std::chrono::steady_clock::now();
-                        std::cout << "Event: value is " << topic->counter << std::endl;
+                        // std::cout << "Event: value is " << topic->counter << std::endl;
                         auto duration =
                             std::chrono::duration_cast<std::chrono::nanoseconds>(finish - topic->sendTimestamp);
-                        std::cout << "Event: latency (ns) is " << duration.count() << std::endl;
+                        std::cout << "Event: latency (ns) is " << duration.count() << "," << std::endl;
                     });
                 };
                 //! [Event: receiveCallback]
@@ -138,13 +138,13 @@ int main()
                 try
                 {
                     auto result = fieldFuture.get();
-                    std::cout << "Field: value is " << result.counter << std::endl;
+                    // std::cout << "Field: value is " << result.counter << std::endl;
 
                     if (result.counter >= 4242)
                     {
                         result.counter++;
                         proxy.m_field.Set(result);
-                        std::cout << "Field: value set to " << result.counter << std::endl;
+                        // std::cout << "Field: value set to " << result.counter << std::endl;
                     }
                 }
                 catch (const std::future_error&)
@@ -159,8 +159,8 @@ int main()
                 try
                 {
                     auto result = methodFuture.get();
-                    std::cout << "Method: result of " << std::to_string(addend1) << " + " << std::to_string(addend2)
-                              << " = " << result.sum << std::endl;
+                    // std::cout << "Method: result of " << std::to_string(addend1) << " + " << std::to_string(addend2)
+                    //           << " = " << result.sum << std::endl;
                 }
                 catch (const std::future_error&)
                 {
@@ -172,7 +172,7 @@ int main()
                 addend1 += addend2 + addend2;
                 addend2++;
 
-                std::cout << std::endl;
+                // std::cout << std::endl;
             }
         }
         std::this_thread::sleep_for(std::chrono::seconds(1));
