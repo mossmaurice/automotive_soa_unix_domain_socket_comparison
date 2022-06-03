@@ -16,22 +16,52 @@
 
 cmake_minimum_required(VERSION 3.16)
 
-if ( NOT TARGET RouDi )
+# check if iceoryx is in CMAKE_PREFIX_PATH
+find_package(iceoryx_hoofs QUIET)
+find_package(iceoryx_posh QUIET)
+
+# fetch iceoryx if not found
+if(NOT iceoryx_hoofs_FOUND OR NOT iceoryx_posh_FOUND)
+    if(iceoryx_hoofs_FOUND)
+        message(FATAL_ERROR "iceoryx_hoofs was not found with 'find_package' but other parts were found!")
+    endif()
+    if(iceoryx_posh_FOUND)
+        message(FATAL_ERROR "iceoryx_posh was not found with 'find_package' but other parts were found!")
+    endif()
+
     include(FetchContent)
     FetchContent_Declare(
-        ICEORYX
+        iceoryx
         GIT_REPOSITORY https://github.com/ApexAI/iceoryx.git
         GIT_TAG automotive_soa_unix_domain_socket_comparison
     )
     FetchContent_GetProperties(iceoryx)
     if (NOT iceoryx_POPULATED)
         message(STATUS "updating: iceoryx" )
-        FetchContent_Populate(ICEORYX)
-
-        add_subdirectory(${iceoryx_SOURCE_DIR}/iceoryx_hoofs
-            ${iceoryx_BINARY_DIR}/iceoryx_hoofs)
-        add_subdirectory(${iceoryx_SOURCE_DIR}/iceoryx_posh  ${iceoryx_BINARY_DIR}/iceoryx_posh)
+        FetchContent_Populate(iceoryx)
     endif()
+
+    set(ICEORYX_WITH_FETCH_CONTENT true CACHE INTERNAL "")
+    set(iceoryx_SOURCE_DIR ${iceoryx_SOURCE_DIR} CACHE INTERNAL "")
+    set(iceoryx_BINARY_DIR ${iceoryx_BINARY_DIR} CACHE INTERNAL "")
+endif()
+
+if(ICEORYX_WITH_FETCH_CONTENT)
+    add_subdirectory(${iceoryx_SOURCE_DIR}/iceoryx_hoofs ${iceoryx_BINARY_DIR}/iceoryx_hoofs)
+    add_subdirectory(${iceoryx_SOURCE_DIR}/iceoryx_posh  ${iceoryx_BINARY_DIR}/iceoryx_posh)
+
+    find_package(iceoryx_posh REQUIRED)
+    find_package(iceoryx_hoofs REQUIRED)
+endif()
+
+if(ICEORYX_WITH_FETCH_CONTENT)
+message("
+#############################################################
+The project was build by obtaining iceoryx with FetchContent.
+If you want to use an existing installation use
+'-DCMAKE_PREFIX_PATH=/path/to/installed/iceoryx'!
+#############################################################
+")
 endif()
 
 project(example_automotive_soa)
