@@ -92,6 +92,8 @@ core::Result<uint32_t> inline EventSubscriber<T, EventTransmission::UDS>::TakeNe
     // Deserialize subPackets
     std::memcpy(&sample.subPackets, readPtr, sizeof(sample.subPackets));
 
+    std::cout << "subPackets: " << sample.subPackets << std::endl;
+
     // If more than 4095 Bytes were send in consecutive messages, receive them now
     if (sample.subPackets > 1)
     {

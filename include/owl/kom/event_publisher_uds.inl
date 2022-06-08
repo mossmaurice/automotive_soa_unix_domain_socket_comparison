@@ -73,6 +73,8 @@ bool EventPublisher<T, EventTransmission::UDS>::Send(std::unique_ptr<SampleType>
 
     tempBuffer.append(reinterpret_cast<char*>(&userSamplePtr->subPackets), sizeof(userSamplePtr->subPackets));
 
+    std::cout << "subPackets: " << userSamplePtr->subPackets << std::endl;
+
     uint32_t k{0};
     uint64_t bytesToSend{userSamplePtr->payloadSizeInBytes};
     uint64_t messageSize{0};

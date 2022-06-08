@@ -20,6 +20,8 @@ cmake_minimum_required(VERSION 3.16)
 find_package(iceoryx_hoofs QUIET)
 find_package(iceoryx_posh QUIET)
 
+option(BUILD_SHARED_LIBS "Create static libraries by default" OFF)
+
 # fetch iceoryx if not found
 if(NOT iceoryx_hoofs_FOUND OR NOT iceoryx_posh_FOUND)
     if(iceoryx_hoofs_FOUND)
@@ -32,9 +34,8 @@ if(NOT iceoryx_hoofs_FOUND OR NOT iceoryx_posh_FOUND)
     include(FetchContent)
     FetchContent_Declare(
         iceoryx
-        GIT_REPOSITORY https://github.com/eclipse-iceoryx/iceoryx.git
-        # Recent commit used here to be able to use the CMake macros. Change this to v3.x once released.
-        GIT_TAG 6a11ba3e25adcb2d2feb5482d38e8298198f77e2
+        GIT_REPOSITORY https://github.com/ApexAI/iceoryx.git
+        GIT_TAG automotive_soa_unix_domain_socket_comparison
     )
     FetchContent_GetProperties(iceoryx)
     if (NOT iceoryx_POPULATED)
