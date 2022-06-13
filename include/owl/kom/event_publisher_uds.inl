@@ -39,6 +39,7 @@ inline std::unique_ptr<T> EventPublisher<T, EventTransmission::UDS>::Loan()
     // hence the creation of the UDS client is done here
     if (!m_uds.isInitialized())
     {
+        std::this_thread::sleep_for(std::chrono::seconds(1));
         m_uds = iox::posix::UnixDomainSocket::create(m_instanceId, iox::posix::IpcChannelSide::CLIENT)
                     .expect("Failed to create UNIX domain socket!");
     }
@@ -73,7 +74,7 @@ bool EventPublisher<T, EventTransmission::UDS>::Send(std::unique_ptr<SampleType>
 
     tempBuffer.append(reinterpret_cast<char*>(&userSamplePtr->subPackets), sizeof(userSamplePtr->subPackets));
 
-    std::cout << "subPackets: " << userSamplePtr->subPackets << std::endl;
+    //std::cout << "subPackets: " << userSamplePtr->subPackets << std::endl;
 
     uint32_t k{0};
     uint64_t bytesToSend{userSamplePtr->payloadSizeInBytes};
